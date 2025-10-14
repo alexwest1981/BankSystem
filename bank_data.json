@@ -1,0 +1,14 @@
+[
+  {
+    "customerId": "12",
+    "name": "anna",
+    "accounts": [
+      {
+        "accountNumber": "872359872138957289375",
+        "balance": 0.0,
+        "interestRate": 0.5,
+        "transactions": []
+      }
+    ]
+  }
+]
