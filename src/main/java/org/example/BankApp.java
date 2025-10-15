@@ -6,10 +6,15 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
+import javafx.scene.control.cell.PropertyValueFactory;
 
 public class BankApp extends Application {
 
     private Bank bank = new Bank();
+    private ListView<String> customerListView = new ListView<>();
+    private TableView<Account> accountTable = new TableView<>();
+    private TableView<Transaction> transactionTable = new TableView<>();
+
 
     public static void main(String[] args) {
         launch(args);
@@ -43,7 +48,7 @@ public class BankApp extends Application {
 
         tabPane.getTabs().addAll(tabRegisterCustomer, tabShowCustomers, tabCreateAccount);
 
-        Scene scene = new Scene(tabPane, 500, 400);
+        Scene scene = new Scene(tabPane, 800, 600);
         primaryStage.setScene(scene);
         primaryStage.show();
     }
@@ -95,9 +100,7 @@ public class BankApp extends Application {
         VBox vbox = new VBox(10);
         vbox.setPadding(new Insets(15));
 
-        ListView<String> customerListView = new ListView<>();
         Button btnRefresh = new Button("Uppdatera lista");
-
         btnRefresh.setOnAction(e -> {
             customerListView.getItems().clear();
             for (Customer c : bank.getCustomers()) {
@@ -105,9 +108,72 @@ public class BankApp extends Application {
             }
         });
 
-        vbox.getChildren().addAll(btnRefresh, customerListView);
+        // Set up columns for accountTable
+        TableColumn<Account, String> accNumCol = new TableColumn<>("Kontonummer");
+        accNumCol.setCellValueFactory(new PropertyValueFactory<>("accountNumber"));
+
+        TableColumn<Account, Double> balanceCol = new TableColumn<>("Saldo");
+        balanceCol.setCellValueFactory(new PropertyValueFactory<>("balance"));
+
+        TableColumn<Account, Double> interestCol = new TableColumn<>("Ränta");
+        interestCol.setCellValueFactory(new PropertyValueFactory<>("interestRate"));
+
+        accountTable.getColumns().setAll(accNumCol, balanceCol, interestCol);
+        accountTable.setPlaceholder(new Label("Välj en kund för att se konton"));
+
+        // Set up columns for transactionTable
+        TableColumn<Transaction, String> dateCol = new TableColumn<>("Datum");
+        dateCol.setCellValueFactory(cellData -> {
+            var date = cellData.getValue().getDate();
+            var formatted = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date);
+            return new javafx.beans.property.SimpleStringProperty(formatted);
+        });
+
+        TableColumn<Transaction, Transaction.Type> typeCol = new TableColumn<>("Typ");
+        typeCol.setCellValueFactory(new PropertyValueFactory<>("type"));
+
+        TableColumn<Transaction, Double> amountCol = new TableColumn<>("Belopp");
+        amountCol.setCellValueFactory(new PropertyValueFactory<>("amount"));
+
+        TableColumn<Transaction, String> descCol = new TableColumn<>("Beskrivning");
+        descCol.setCellValueFactory(new PropertyValueFactory<>("description"));
+
+        transactionTable.getColumns().setAll(dateCol, typeCol, amountCol, descCol);
+        transactionTable.setPlaceholder(new Label("Välj ett konto för att se transaktioner"));
+
+        // Event: när kund väljs, visa konton
+        customerListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                String custId = newVal.split(" - ")[0];
+                Customer customer = bank.findCustomerById(custId);
+                if (customer != null) {
+                    accountTable.getItems().setAll(customer.getAccounts());
+                    transactionTable.getItems().clear();
+                }
+            }
+        });
+
+        // Event: när konto väljs, visa transaktioner
+        accountTable.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newAcc) -> {
+            if (newAcc != null) {
+                transactionTable.getItems().setAll(newAcc.getTransactions());
+            }
+        });
+
+        HBox hbox = new HBox(10);
+        VBox customerBox = new VBox(5, btnRefresh, customerListView);
+        VBox accountBox = new VBox(5, new Label("Konton"), accountTable);
+        VBox transactionBox = new VBox(5, new Label("Transaktioner"), transactionTable);
+        customerBox.setPrefWidth(150);
+        accountBox.setPrefWidth(200);
+        transactionBox.setPrefWidth(350);
+
+        hbox.getChildren().addAll(customerBox, accountBox, transactionBox);
+
+        vbox.getChildren().add(hbox);
         return vbox;
     }
+
 
     private GridPane createCreateAccountPane() {
         GridPane grid = new GridPane();
