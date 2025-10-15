@@ -84,4 +84,9 @@ public class Bank {
             System.out.println("Error saving file: " + e.getMessage());
         }
     }
+
+    public List<Customer> getCustomers() {
+        return new ArrayList<>(customers); // Returnera en kopia för säkerhet
+    }
+
 }

@@ -8,6 +8,24 @@
         "balance": 0.0,
         "interestRate": 0.5,
         "transactions": []
+      },
+      {
+        "accountNumber": "123123123",
+        "balance": 0.0,
+        "interestRate": 0.01,
+        "transactions": []
+      }
+    ]
+  },
+  {
+    "customerId": "123",
+    "name": "Bertil",
+    "accounts": [
+      {
+        "accountNumber": "213213213213213",
+        "balance": 0.0,
+        "interestRate": 0.05,
+        "transactions": []
       }
     ]
   }
