@@ -59,6 +59,26 @@
 
 <h2>Licens</h2>
 <p>MIT License © 2025 Alex Weström / Fenrir Studios</p>
+<p>MIT-licensen (förklaring)
+MIT-licensen är en enkel och generös öppen källkodslicens utvecklad av Massachusetts Institute of Technology (MIT). Den tillåter vem som helst att använda, kopiera, modifiera, sammanfoga, publicera, distribuera, underlicensiera och sälja programvaran, utan några stora restriktioner.
+
+Viktiga punkter:
+Du får använda programvaran för alla ändamål, även kommersiella.
+
+Du får ändra och bygga vidare på koden.
+
+Licensmeddelandet och upphovsrättsnotisen måste följa med i alla kopior av programvaran, inklusive modifierade versioner.
+
+Programvaran tillhandahålls "i befintligt skick" utan någon garanti. Utvecklarna ansvarar inte för problem eller skador som orsakas av att använda programvaran.
+
+Vad innebär det för dig som användare?
+Du kan tryggt använda, ändra och dela koden.
+
+Du måste behålla licensinformationen i källkoden.
+
+Du behöver inte öppna din egen kod om du bygger vidare på detta projekt.
+
+Licensen är väldigt flexibel och populär för både privata och kommersiella projekt.</p>
 
 <h2>Kontakt &amp; Bidrag</h2>
 <ul>
