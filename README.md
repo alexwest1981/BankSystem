@@ -1,7 +1,7 @@
-<h1>BankApp – JavaFX Banking Application</h1>
+<h1>BankSystem – JavaFX Banking Application</h1>
 
 <h2>Beskrivning</h2>
-<p>BankApp är en enkel bankapplikation byggd med Java och JavaFX för grafiskt användargränssnitt, tillsammans med Gson för JSON-hantering. Projektet syftar till att erbjuda en robust och användarvänlig plattform för att hantera kunder, konton och banktransaktioner, med möjlighet att spara och läsa data från disk i JSON-format.</p>
+<p>BankSystem är en enkel bankapplikation byggd med Java och JavaFX för grafiskt användargränssnitt, tillsammans med Gson för JSON-hantering. Projektet syftar till att erbjuda en robust och användarvänlig plattform för att hantera kunder, konton och banktransaktioner, med möjlighet att spara och läsa data från disk i JSON-format.</p>
 
 <h2>Teknologier och Verktyg</h2>
 <ul>
