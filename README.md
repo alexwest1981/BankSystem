@@ -43,7 +43,7 @@
 <h2>Installation och användning</h2>
 <ol>
   <li>Klona detta repository:<br>
-    <code>git clone https://github.com/alexwest1981/BankApp.git</code>
+    <code>git clone https://github.com/alexwest1981/BankSystem.git</code>
   </li>
   <li>Importera maven-projektet i IntelliJ IDEA.</li>
   <li>Säkerställ att du har JDK 24 och JavaFX SDK 24 installerade.</li>
