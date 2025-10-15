@@ -64,4 +64,13 @@ public class Account {
     public List<Transaction> getTransactions() {
         return transactions;
     }
+
+    public double getInterestRate() {
+        return interestRate;
+    }
+
+    public void setInterestRate(double interestRate) {
+        this.interestRate = interestRate;
+    }
+
 }

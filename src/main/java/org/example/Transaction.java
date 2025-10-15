@@ -20,4 +20,21 @@ public class Transaction {
     public String toString() {
         return date + " - " + type + " - " + amount + " - " + description;
     }
+
+    public Date getDate() {
+        return date;
+    }
+
+    public double getAmount() {
+        return amount;
+    }
+
+    public Type getType() {
+        return type;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
 }
