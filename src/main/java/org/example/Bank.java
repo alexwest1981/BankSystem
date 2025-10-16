@@ -21,9 +21,9 @@ public class Bank {
         customers = new ArrayList<>();
     }
 
-    public void registerCustomer(String customerId, String name) {
-        Customer newCustomer = new Customer(customerId, name);
-        customers.add(newCustomer);
+    public void registerCustomer(String customerId, String name, String personalNumber, String address, String email, String phone) {
+        Customer customer = new Customer(customerId, name, personalNumber, address, email, phone);
+        customers.add(customer);
     }
 
     public boolean accountNumberExists(String accountNumber) {

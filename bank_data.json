@@ -28,5 +28,17 @@
         "transactions": []
       }
     ]
+  },
+  {
+    "customerId": "6612213211",
+    "name": "Albert Herbertsson",
+    "accounts": [
+      {
+        "accountNumber": "112043026497",
+        "balance": 0.0,
+        "interestRate": 0.05,
+        "transactions": []
+      }
+    ]
   }
 ]

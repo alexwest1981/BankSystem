@@ -23,10 +23,20 @@ public class Main {
                     String custId = scanner.nextLine().trim();
                     System.out.print("Ange kundens namn: ");
                     String custName = scanner.nextLine().trim();
+                    System.out.print("Ange personnummer: ");
+                    String personalNumber = scanner.nextLine().trim();
+                    System.out.print("Ange adress: ");
+                    String address = scanner.nextLine().trim();
+                    System.out.print("Ange email: ");
+                    String email = scanner.nextLine().trim();
+                    System.out.print("Ange telefonnummer: ");
+                    String phone = scanner.nextLine().trim();
+
                     if (bank.findCustomerById(custId) != null) {
                         System.out.println("Kund-id finns redan!");
                     } else  {
-                        bank.registerCustomer(custId, custName);
+                        // Använder nu metoden som tar alla fält
+                        bank.registerCustomer(custId, custName, personalNumber, address, email, phone);
                         bank.saveToFile();
                         System.out.println("Kund registrerad.");
                     }
@@ -58,7 +68,10 @@ public class Main {
                         break;
                     }
 
-                    customer.openAccount(accNum, rate);
+                    System.out.print("Ange clearingnummer: ");
+                    String clearingNumber = scanner.nextLine().trim();
+
+                    customer.openAccount(accNum, rate, clearingNumber);
                     bank.saveToFile();
                     System.out.println("Konto skapat.");
                     break;
