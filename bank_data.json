@@ -5,9 +5,16 @@
     "accounts": [
       {
         "accountNumber": "213213213213213",
-        "balance": 0.0,
+        "balance": 500.0,
         "interestRate": 0.05,
-        "transactions": []
+        "transactions": [
+          {
+            "date": "Oct 18, 2025, 8:27:32 AM",
+            "amount": 500.0,
+            "type": "DEPOSIT",
+            "description": "Insättning"
+          }
+        ]
       }
     ]
   },
@@ -36,6 +43,23 @@
         "balance": 0.0,
         "interestRate": 0.015,
         "clearingNumber": "2222-2",
+        "transactions": []
+      }
+    ]
+  },
+  {
+    "customerId": "0112272222",
+    "name": "Fille Song",
+    "personalNumber": "0112272222",
+    "address": "Ballefjonggårda 12",
+    "email": "abc@def.gh",
+    "phone": "645654654654",
+    "accounts": [
+      {
+        "accountNumber": "338997247054",
+        "balance": 0.0,
+        "interestRate": 0.01,
+        "clearingNumber": "1111-1",
         "transactions": []
       }
     ]

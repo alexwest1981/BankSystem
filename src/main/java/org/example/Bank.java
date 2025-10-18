@@ -35,6 +35,11 @@ public class Bank {
         return bankBalance;
     }
 
+    public void decreaseBankBalance(double amount) {
+        bankBalance -= amount;
+    }
+
+
     public synchronized boolean depositToCustomer(String customerId, String accountNumber, double amount) {
         if (amount <= 0 || amount > bankBalance) return false;
         Customer customer = findCustomerById(customerId);

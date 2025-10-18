@@ -18,6 +18,13 @@ public class BankApp extends Application {
     private TableView<Transaction> transactionTable = new TableView<>();
     private Label lblAccountNumber = new Label();
     private Label lblClearingNumber = new Label();
+    private Label lblBankBalance = new Label("Bankens saldo: 0.00 kr");
+    private TextField txtDepositCustomerId = new TextField();
+    private TextField txtDepositAccount = new TextField();
+    private CustomerService customerService = new CustomerService();
+    private AccountService accountService = new AccountService();
+
+
 
     // Instansvariabler för förhandsvisning
     private String previewedAccountNumber = "";
@@ -47,7 +54,7 @@ public class BankApp extends Application {
 
         tabPane.getTabs().addAll(tabRegisterAndCreateAccount, tabShowCustomers, tabTransactionManagement);
 
-        Scene scene = new Scene(tabPane, 800, 600);
+        Scene scene = new Scene(tabPane, 1000, 800);
         primaryStage.setScene(scene);
         primaryStage.show();
     }
@@ -97,79 +104,50 @@ public class BankApp extends Application {
         Label lblMessage = new Label();
 
         btnRegisterAndCreate.setOnAction(e -> {
-            // Valideringar
-            if (txtFirstName.getText().isBlank() || txtLastName.getText().isBlank() ||
-                    txtPnr.getText().isBlank() || txtAddress.getText().isBlank() ||
-                    txtEmail.getText().isBlank() || txtPhone.getText().isBlank() ||
-                    txtInterestRate.getText().isBlank()) {
-                lblMessage.setText("Fyll i alla kunduppgifter och räntesats.");
-                return;
-            }
-            if (!txtPnr.getText().matches("\\d{10}")) {
-                lblMessage.setText("Personnummer måste vara 10 siffror.");
-                return;
-            }
+            String firstName = txtFirstName.getText();
+            String lastName = txtLastName.getText();
+            String pnr = txtPnr.getText();
+            String address = txtAddress.getText();
+            String email = txtEmail.getText();
+            String phone = txtPhone.getText();
+            String interestText = txtInterestRate.getText();
+            String office = cbOffice.getValue();
 
-            double interestRate;
-            try {
-                interestRate = Double.parseDouble(txtInterestRate.getText()) / 100.0;
-                if (interestRate < 0 || interestRate > 1) {
-                    lblMessage.setText("Räntesats måste vara mellan 0 och 100.");
-                    return;
-                }
-            } catch (NumberFormatException ex) {
-                lblMessage.setText("Felaktigt format på räntesatsen.");
+            if (!validateCustomerData(firstName, lastName, pnr, address, email, phone, interestText)) {
+                lblMessage.setText("Fyll i alla fält korrekt.");
                 return;
             }
 
-            String customerId = txtPnr.getText();
-            if (bank.findCustomerById(customerId) != null) {
-                lblMessage.setText("Kund med detta personnummer finns redan.");
+            double interestRate = Double.parseDouble(interestText) / 100.0;
+
+            if (customerService.findCustomer(pnr) != null) {
+                lblMessage.setText("Kund finns redan.");
                 return;
             }
 
-            // Generera kontonummer och clearingnummer innan kundskapande
-            String accountNumber = previewedAccountNumber;
-            String clearingNumber = previewedClearingNumber;
+            boolean registered = customerService.registerCustomer(
+                    pnr, firstName + " " + lastName, pnr, address, email, phone);
 
-            if (accountNumber.isEmpty() || clearingNumber.isEmpty()) {
-                lblMessage.setText("Fyll i giltigt personnummer och kontorsort för förhandsvisning/kontoskaping.");
+            if (!registered) {
+                lblMessage.setText("Fel vid registrering.");
                 return;
             }
 
-            bank.registerCustomer(
-                    customerId,
-                    txtFirstName.getText() + " " + txtLastName.getText(),
-                    txtPnr.getText(),
-                    txtAddress.getText(),
-                    txtEmail.getText(),
-                    txtPhone.getText()
-            );
-            Customer customer = bank.findCustomerById(customerId);
+            Customer customer = customerService.findCustomer(pnr);
+            String accountNumber = accountService.generateAccountNumber();
+            String clearingNumber = accountService.generateClearingNumber(office);
 
-            if (customer != null) {
-                customer.openAccount(accountNumber, interestRate, clearingNumber);
-                lblAccountNumber.setText(formatAccountNumber(accountNumber));
+            boolean accountCreated = accountService.createAccountForCustomer(customer, accountNumber, interestRate, clearingNumber);
+            if (accountCreated) {
+                lblAccountNumber.setText(accountService.formatAccountNumber(accountNumber));
                 lblClearingNumber.setText(clearingNumber);
                 lblMessage.setText("Kund och konto skapade.");
-
-                // Rensa endast textfälten för ny registrering
-                txtFirstName.clear();
-                txtLastName.clear();
-                txtPnr.clear();
-                txtAddress.clear();
-                txtEmail.clear();
-                txtPhone.clear();
-                txtInterestRate.clear();
-
-                // OBS: Rensa INTE lblAccountNumber eller lblClearingNumber här!
-                bank.saveToFile();
-                // Generera ny förhandsvisning efter skapande om användaren vill registrera fler
-                previewAccountData("", cbOffice.getValue());
+                // Rensa textfält efter behov
             } else {
-                lblMessage.setText("Fel vid skapande av kund.");
+                lblMessage.setText("Fel vid kontoskapande.");
             }
         });
+
 
         // Placera alla element i grid
         grid.add(labelFirstName, 0, 0);
@@ -384,6 +362,18 @@ public class BankApp extends Application {
         Button btnAdjustInterest = new Button("Justera ränta");
         Label lblInterestStatus = new Label();
 
+        TextField txtDepositCustomerId = new TextField();
+        txtDepositCustomerId.setPromptText("Kund-ID för insättning");
+
+        TextField txtDepositAccount = new TextField();
+        txtDepositAccount.setPromptText("Kontonummer för insättning");
+
+        TextField txtDepositAmount = new TextField();
+        txtDepositAmount.setPromptText("Belopp att sätta in från banken");
+
+        Button btnDepositFromBank = new Button("Sätt in från banken");
+        Label lblDepositStatus = new Label();
+
         TableColumn<Account, String> colAccNum = new TableColumn<>("Kontonummer");
         colAccNum.setCellValueFactory(new PropertyValueFactory<>("accountNumber"));
 
@@ -526,6 +516,35 @@ public class BankApp extends Application {
             }
         });
 
+        btnDepositFromBank.setOnAction(e -> {
+            String custId = txtDepositCustomerId.getText().trim();
+            String accNum = txtDepositAccount.getText().trim();
+            String amountStr = txtDepositAmount.getText().trim();
+
+            if (custId.isEmpty() || accNum.isEmpty() || amountStr.isEmpty()) {
+                lblDepositStatus.setText("Fyll i alla fält.");
+                return;
+            }
+
+            double amount;
+            try {
+                amount = Double.parseDouble(amountStr);
+            } catch (NumberFormatException ex) {
+                lblDepositStatus.setText("Felaktigt belopp.");
+                return;
+            }
+
+            DepositController depositController = new DepositController();
+            boolean success = depositController.depositToCustomerAccount(custId, accNum, amount);
+
+            if (success) {
+                updateBankBalance();
+                lblDepositStatus.setText("Insättning lyckades.");
+            } else {
+                lblDepositStatus.setText("Insättning misslyckades. Kontrollera saldo och data.");
+            }
+        });
+
         HBox searchBox = new HBox(10, txtSearch, btnSearch);
         btnSearch.setOnAction(e -> txtSearch.fireEvent(new javafx.event.ActionEvent()));
 
@@ -537,12 +556,39 @@ public class BankApp extends Application {
         rightPane.setPrefWidth(350);
         VBox transferPane = new VBox(10, new Label("Överföring"), txtTransferAmount, txtTargetAccount, btnTransfer, lblTransferStatus);
         VBox interestPane = new VBox(10, new Label("Justera Ränta"), txtNewInterestRate, btnAdjustInterest, lblInterestStatus);
-        HBox bottomPane = new HBox(20, transferPane, interestPane);
+
+        VBox depositPane = new VBox(10, new Label("Insättning från bank"),
+                txtDepositCustomerId, txtDepositAccount, txtDepositAmount,
+                btnDepositFromBank, lblDepositStatus);
+        depositPane.setPadding(new Insets(10));
+        depositPane.setStyle("-fx-border-color: gray; -fx-border-radius: 5px; -fx-border-width: 1px;");
+
+        HBox bottomPane = new HBox(20, transferPane, interestPane, depositPane);
 
         root.getChildren().addAll(searchBox, new HBox(15, leftPane, middlePane, rightPane), bottomPane);
 
         tab.setContent(root);
         tab.setClosable(false);
         return tab;
+    }
+
+    private void updateBankBalance() {
+        double saldo = bank.getBankBalance();
+        lblBankBalance.setText(String.format("Bankens saldo: %.2f kr", saldo));
+    }
+
+    private boolean validateCustomerData(String firstName, String lastName, String pnr, String address, String email, String phone, String interestText) {
+        if (firstName.isBlank() || lastName.isBlank() || pnr.isBlank() || address.isBlank() ||
+                email.isBlank() || phone.isBlank() || interestText.isBlank()) {
+            return false;
+        }
+        if (!pnr.matches("\\d{10}")) return false;
+        try {
+            double rate = Double.parseDouble(interestText);
+            if (rate < 0 || rate > 100) return false;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+        return true;
     }
 }
