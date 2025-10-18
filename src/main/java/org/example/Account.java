@@ -7,62 +7,24 @@ public class Account {
     private String accountNumber;
     private double balance;
     private double interestRate;
+    private String clearingNumber; // Nytt fält för clearingnummer
+
     private List<Transaction> transactions;
 
-    // Konstruktor
-    public Account(String accountNumber, double interestRate) {
+    public Account(String accountNumber, double interestRate, String clearingNumber) {
         this.accountNumber = accountNumber;
         this.interestRate = interestRate;
-        this.balance = 0;
+        this.clearingNumber = clearingNumber;
+        this.balance = 0.0;
         this.transactions = new ArrayList<>();
-    }
-
-    // Insättning
-    public void  deposit(double amount) {
-        if (amount <= 0) {
-            System.out.println("Amount must be greater than 0.");
-            return;
-        }
-    }
-
-    // Uttag
-    public void withdraw(double amount) throws Exception {
-        if (amount <= 0) {
-            System.out.println("Amount must be greater than 0.");
-            return;
-        }
-        if (balance < amount) {
-            throw new Exception("Insufficient funds.");
-        }
-        balance -= amount;
-        transactions.add(new Transaction(amount, Transaction.Type.WITHDRAWAL, "Uttag"));
-    }
-
-    // Överföring till annat konto
-    public void transferTo(Account targetAccount, double amount) throws Exception {
-        this.withdraw(amount);
-        targetAccount.deposit(amount);
-        transactions.add(new Transaction(amount, Transaction.Type.TRANSFER, "Överföring"));
-    }
-
-    // Beräkna och lägg till ränta
-    public void applyInteres() {
-        double interest = balance * interestRate;
-        balance += interest;
-        transactions.add(new Transaction(interest, Transaction.Type.DEPOSIT, "Ränta"));
-    }
-
-    // Getters
-    public double getBalance() {
-        return balance;
     }
 
     public String getAccountNumber() {
         return accountNumber;
     }
 
-    public List<Transaction> getTransactions() {
-        return transactions;
+    public double getBalance() {
+        return balance;
     }
 
     public double getInterestRate() {
@@ -73,4 +35,44 @@ public class Account {
         this.interestRate = interestRate;
     }
 
+    public String getClearingNumber() {
+        return clearingNumber;
+    }
+
+    public void setClearingNumber(String clearingNumber) {
+        this.clearingNumber = clearingNumber;
+    }
+
+    public List<Transaction> getTransactions() {
+        return transactions;
+    }
+
+    public void deposit(double amount) {
+        if(amount > 0) {
+            balance += amount;
+            transactions.add(new Transaction(Transaction.Type.DEPOSIT, amount, "Insättning"));
+        }
+    }
+
+    public void withdraw(double amount) throws Exception {
+        if(amount > 0 && balance >= amount) {
+            balance -= amount;
+            transactions.add(new Transaction(Transaction.Type.WITHDRAWAL, amount, "Uttag"));
+        } else {
+            throw new Exception("Otillräckligt saldo för uttag");
+        }
+    }
+
+    public void transferTo(Account target, double amount) throws Exception {
+        if (target == null) {
+            throw new Exception("Mottagarkonto saknas");
+        }
+        if (this.equals(target)) {
+            throw new Exception("Kan ej överföra till samma konto");
+        }
+        this.withdraw(amount);
+        target.deposit(amount);
+        transactions.add(new Transaction(Transaction.Type.TRANSFER, amount, "Överfört till konto " + target.getAccountNumber()));
+        target.getTransactions().add(new Transaction(Transaction.Type.TRANSFER, amount, "Mottagit från konto " + this.getAccountNumber()));
+    }
 }

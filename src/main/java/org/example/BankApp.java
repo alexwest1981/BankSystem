@@ -8,13 +8,27 @@ import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import javafx.scene.control.cell.PropertyValueFactory;
 
+import java.util.Random;
+
 public class BankApp extends Application {
 
-    private Bank bank = new Bank();
+    private Bank bank = Bank.getInstance();
     private ListView<String> customerListView = new ListView<>();
     private TableView<Account> accountTable = new TableView<>();
     private TableView<Transaction> transactionTable = new TableView<>();
+    private Label lblAccountNumber = new Label();
+    private Label lblClearingNumber = new Label();
+    private Label lblBankBalance = new Label("Bankens saldo: 0.00 kr");
+    private TextField txtDepositCustomerId = new TextField();
+    private TextField txtDepositAccount = new TextField();
+    private CustomerService customerService = new CustomerService();
+    private AccountService accountService = new AccountService();
 
+
+
+    // Instansvariabler för förhandsvisning
+    private String previewedAccountNumber = "";
+    private String previewedClearingNumber = "";
 
     public static void main(String[] args) {
         launch(args);
@@ -28,147 +42,184 @@ public class BankApp extends Application {
 
         TabPane tabPane = new TabPane();
 
-        // Flik för Kundregistrering
-        Tab tabRegisterCustomer = new Tab("Registrera kund");
-        GridPane gridRegister = createRegisterCustomerPane();
-        tabRegisterCustomer.setContent(gridRegister);
-        tabRegisterCustomer.setClosable(false);
+        Tab tabRegisterAndCreateAccount = new Tab("Registrera Kund & Skapa Konto");
+        tabRegisterAndCreateAccount.setContent(createRegisterAndCreateAccountPane());
+        tabRegisterAndCreateAccount.setClosable(false);
 
-        // Flik för att visa kunder
-        Tab tabShowCustomers = new Tab("Visa kunder");
-        VBox showCustomerPane = createShowCustomersPane();
-        tabShowCustomers.setContent(showCustomerPane);
+        Tab tabShowCustomers = new Tab("Visa kunder", createShowCustomersPane());
         tabShowCustomers.setClosable(false);
 
-        // Flik för att skapa konto
-        Tab tabCreateAccount = new Tab("Skapa konto");
-        GridPane gridCreateAccount = createCreateAccountPane();
-        tabCreateAccount.setContent(gridCreateAccount);
-        tabCreateAccount.setClosable(false);
-
-        // Flik för kontohantering (transaktioner och ränta)
         Tab tabTransactionManagement = createTransactionManagementTab();
+        tabTransactionManagement.setClosable(false);
 
-        tabPane.getTabs().addAll(tabRegisterCustomer, tabShowCustomers, tabCreateAccount, tabTransactionManagement);
+        tabPane.getTabs().addAll(tabRegisterAndCreateAccount, tabShowCustomers, tabTransactionManagement);
 
-        Scene scene = new Scene(tabPane, 800, 600);
+        Scene scene = new Scene(tabPane, 1000, 800);
         primaryStage.setScene(scene);
         primaryStage.show();
     }
 
-
-    // Panel för att skapa kund
-    private GridPane createRegisterCustomerPane() {
-        GridPane gridRegister = new GridPane();
-        gridRegister.setPadding(new Insets(15));
-        gridRegister.setVgap(10);
-        gridRegister.setHgap(10);
-
-        Label labelId = new Label("Kund-ID:");
-        TextField txtId = new TextField();
-        Label labelName = new Label("Namn:");
-        TextField txtName = new TextField();
-        Button btnRegister = new Button("Registrera");
-        Label lblMessage = new Label();
-
-        btnRegister.setOnAction(e -> {
-            String custId = txtId.getText().trim();
-            String custName = txtName.getText().trim();
-
-            if (custId.isEmpty() || custName.isEmpty()) {
-                lblMessage.setText("Fyll i båda fälten.");
-                return;
-            }
-            if (bank.findCustomerById(custId) != null) {
-                lblMessage.setText("Kund-id finns redan.");
-                return;
-            }
-
-            bank.registerCustomer(custId, custName);
-            bank.saveToFile();
-            lblMessage.setText("Kund registrerad: " + custName);
-            txtId.clear();
-            txtName.clear();
-        });
-
-        gridRegister.add(labelId, 0, 0);
-        gridRegister.add(txtId, 1, 0);
-        gridRegister.add(labelName, 0, 1);
-        gridRegister.add(txtName, 1, 1);
-        gridRegister.add(btnRegister, 1, 2);
-        gridRegister.add(lblMessage, 1, 3);
-
-        return gridRegister;
-    }
-
-    // Panel för att skapa konto
-    private GridPane createCreateAccountPane() {
+    private GridPane createRegisterAndCreateAccountPane() {
         GridPane grid = new GridPane();
         grid.setPadding(new Insets(15));
         grid.setVgap(10);
         grid.setHgap(10);
 
-        Label labelCustomerId = new Label("Kund-ID:");
-        TextField txtCustomerId = new TextField();
-        Label labelAccountNumber = new Label("Kontonummer:");
-        TextField txtAccountNumber = new TextField();
-        Label labelInterestRate = new Label("Räntesats:");
-        TextField txtInterestRate = new TextField();
+        // Skapa och placera alla kundfält och etiketter
+        Label labelFirstName = new Label("Förnamn:");
+        TextField txtFirstName = new TextField();
 
-        Button btnCreate = new Button("Skapa konto");
+        Label labelLastName = new Label("Efternamn:");
+        TextField txtLastName = new TextField();
+
+        Label labelPnr = new Label("Personnummer:");
+        TextField txtPnr = new TextField();
+
+        Label labelAddress = new Label("Adress:");
+        TextField txtAddress = new TextField();
+
+        Label labelEmail = new Label("Email:");
+        TextField txtEmail = new TextField();
+
+        Label labelPhone = new Label("Telefon:");
+        TextField txtPhone = new TextField();
+
+        Label labelInterestRate = new Label("Räntesats (%):");
+        TextField txtInterestRate = new TextField();
+        txtInterestRate.setPromptText("Ex. 1.25 för 1.25%");
+
+        Label labelOffice = new Label("Kontorsort:");
+        ComboBox<String> cbOffice = new ComboBox<>();
+        cbOffice.getItems().addAll("Stockholm", "Göteborg", "Malmö", "Uppsala", "Västerås",
+                "Örebro", "Linköping", "Helsingborg", "Jönköping", "Norrköping");
+        cbOffice.getSelectionModel().selectFirst();
+        cbOffice.valueProperty().addListener((obs, oldVal, newVal) -> previewAccountData(txtPnr.getText(), newVal));
+        txtPnr.textProperty().addListener((obs, oldVal, newVal) -> previewAccountData(newVal, cbOffice.getValue()));
+
+        Label labelGeneratedAccountNumber = new Label("Genererat kontonummer:");
+
+        Label labelGeneratedClearingNumber = new Label("Genererat clearingnummer:");
+
+        Button btnRegisterAndCreate = new Button("Registrera kund & skapa konto");
         Label lblMessage = new Label();
 
-        btnCreate.setOnAction(e -> {
-            String customerId = txtCustomerId.getText().trim();
-            String accNum = txtAccountNumber.getText().trim();
-            String interestStr = txtInterestRate.getText().trim();
+        btnRegisterAndCreate.setOnAction(e -> {
+            String firstName = txtFirstName.getText();
+            String lastName = txtLastName.getText();
+            String pnr = txtPnr.getText();
+            String address = txtAddress.getText();
+            String email = txtEmail.getText();
+            String phone = txtPhone.getText();
+            String interestText = txtInterestRate.getText();
+            String office = cbOffice.getValue();
 
-            if (customerId.isEmpty() || accNum.isEmpty() || interestStr.isEmpty()) {
-                lblMessage.setText("Alla fält måste fyllas i.");
+            if (!validateCustomerData(firstName, lastName, pnr, address, email, phone, interestText)) {
+                lblMessage.setText("Fyll i alla fält korrekt.");
                 return;
             }
 
-            Customer customer = bank.findCustomerById(customerId);
-            if (customer == null) {
-                lblMessage.setText("Ingen kund med detta ID.");
+            double interestRate = Double.parseDouble(interestText) / 100.0;
+
+            if (customerService.findCustomer(pnr) != null) {
+                lblMessage.setText("Kund finns redan.");
                 return;
             }
 
-            if (bank.accountNumberExists(accNum)) {
-                lblMessage.setText("Kontonummer finns redan.");
+            boolean registered = customerService.registerCustomer(
+                    pnr, firstName + " " + lastName, pnr, address, email, phone);
+
+            if (!registered) {
+                lblMessage.setText("Fel vid registrering.");
                 return;
             }
 
-            double rate;
-            try {
-                rate = Double.parseDouble(interestStr);
-            } catch (NumberFormatException ex) {
-                lblMessage.setText("Felaktigt format på räntesatsen");
-                return;
+            Customer customer = customerService.findCustomer(pnr);
+            String accountNumber = accountService.generateAccountNumber();
+            String clearingNumber = accountService.generateClearingNumber(office);
+
+            boolean accountCreated = accountService.createAccountForCustomer(customer, accountNumber, interestRate, clearingNumber);
+            if (accountCreated) {
+                lblAccountNumber.setText(accountService.formatAccountNumber(accountNumber));
+                lblClearingNumber.setText(clearingNumber);
+                lblMessage.setText("Kund och konto skapade.");
+                // Rensa textfält efter behov
+            } else {
+                lblMessage.setText("Fel vid kontoskapande.");
             }
-
-            customer.openAccount(accNum, rate);
-            bank.saveToFile();
-            lblMessage.setText("Konto skapat för kund " + customer.getName());
-
-            txtCustomerId.clear();
-            txtAccountNumber.clear();
-            txtInterestRate.clear();
         });
 
-        grid.add(labelCustomerId, 0, 0);
-        grid.add(txtCustomerId, 1, 0);
-        grid.add(labelAccountNumber, 0, 1);
-        grid.add(txtAccountNumber, 1, 1);
-        grid.add(labelInterestRate, 0, 2);
-        grid.add(txtInterestRate, 1, 2);
-        grid.add(btnCreate, 1, 3);
-        grid.add(lblMessage, 1, 4);
+
+        // Placera alla element i grid
+        grid.add(labelFirstName, 0, 0);
+        grid.add(txtFirstName, 1, 0);
+        grid.add(labelLastName, 0, 1);
+        grid.add(txtLastName, 1, 1);
+        grid.add(labelPnr, 0, 2);
+        grid.add(txtPnr, 1, 2);
+        grid.add(labelAddress, 0, 3);
+        grid.add(txtAddress, 1, 3);
+        grid.add(labelEmail, 0, 4);
+        grid.add(txtEmail, 1, 4);
+        grid.add(labelPhone, 0, 5);
+        grid.add(txtPhone, 1, 5);
+        grid.add(labelInterestRate, 0, 6);
+        grid.add(txtInterestRate, 1, 6);
+        grid.add(labelOffice, 0, 7);
+        grid.add(cbOffice, 1, 7);
+        grid.add(labelGeneratedAccountNumber, 0, 8);
+        grid.add(lblAccountNumber, 1, 8);
+        grid.add(labelGeneratedClearingNumber, 0, 9);
+        grid.add(lblClearingNumber, 1, 9);
+        grid.add(btnRegisterAndCreate, 1, 10);
+        grid.add(lblMessage, 1, 11);
 
         return grid;
     }
 
-    // Panel för att visa kunder
+    private String generateAccountNumber() {
+        Random rnd = new Random();
+        int part1 = rnd.nextInt(9000) + 1000;
+        int part2 = rnd.nextInt(9000) + 1000;
+        int part3 = rnd.nextInt(9000) + 1000;
+        return String.format("%04d%04d%04d", part1, part2, part3);
+    }
+
+    private String formatAccountNumber(String number) {
+        return number.replaceAll("(\\d{4})(\\d{4})(\\d{4})", "$1 $2 $3");
+    }
+
+    private String generateClearingNumber(String city) {
+        switch (city.toLowerCase()) {
+            case "stockholm": return "1111-1";
+            case "göteborg": return "2222-2";
+            case "malmö": return "3333-3";
+            case "uppsala": return "4444-4";
+            case "västerås": return "5555-5";
+            case "örebro": return "6666-6";
+            case "linköping": return "7777-7";
+            case "helsingborg": return "8888-8";
+            case "jönköping": return "9999-9";
+            case "norrköping": return "0000-0";
+            default: return "0000-0";
+        }
+    }
+
+    private void previewAccountData(String pnr, String office) {
+        if (pnr != null && pnr.matches("\\d{10}") && office != null) {
+            previewedAccountNumber = generateAccountNumber();
+            previewedClearingNumber = generateClearingNumber(office);
+
+            lblAccountNumber.setText(formatAccountNumber(previewedAccountNumber));
+            lblClearingNumber.setText(previewedClearingNumber);
+        } else {
+            previewedAccountNumber = "";
+            previewedClearingNumber = "";
+            lblAccountNumber.setText("");
+            lblClearingNumber.setText("");
+        }
+    }
+
+
     private VBox createShowCustomersPane() {
         VBox vbox = new VBox(10);
         vbox.setPadding(new Insets(15));
@@ -181,7 +232,6 @@ public class BankApp extends Application {
             }
         });
 
-        // Set up columns for accountTable
         TableColumn<Account, String> accNumCol = new TableColumn<>("Kontonummer");
         accNumCol.setCellValueFactory(new PropertyValueFactory<>("accountNumber"));
 
@@ -194,7 +244,6 @@ public class BankApp extends Application {
         accountTable.getColumns().setAll(accNumCol, balanceCol, interestCol);
         accountTable.setPlaceholder(new Label("Välj en kund för att se konton"));
 
-        // Set up columns for transactionTable
         TableColumn<Transaction, String> dateCol = new TableColumn<>("Datum");
         dateCol.setCellValueFactory(cellData -> {
             var date = cellData.getValue().getDate();
@@ -214,7 +263,6 @@ public class BankApp extends Application {
         transactionTable.getColumns().setAll(dateCol, typeCol, amountCol, descCol);
         transactionTable.setPlaceholder(new Label("Välj ett konto för att se transaktioner"));
 
-        // Labels för kontoinformation
         Label lblSaldo = new Label("Saldo: ");
         Label lblRanta = new Label("Ränta: ");
 
@@ -222,7 +270,19 @@ public class BankApp extends Application {
         accountInfoBox.setPadding(new Insets(10));
         accountInfoBox.setPrefWidth(200);
 
-        // Event: när kund väljs, visa konton
+        Button btnDeleteCustomer = new Button("Ta bort vald kund");
+        btnDeleteCustomer.setOnAction(e -> {
+            String selected = customerListView.getSelectionModel().getSelectedItem();
+            if (selected != null) {
+                String customerId = selected.split(" - ")[0];
+                if (bank.removeCustomerById(customerId)) {
+                    customerListView.getItems().remove(selected);
+                    accountTable.getItems().clear();
+                    transactionTable.getItems().clear();
+                }
+            }
+        });
+
         customerListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
                 String custId = newVal.split(" - ")[0];
@@ -235,7 +295,6 @@ public class BankApp extends Application {
             }
         });
 
-        // Event: när konto väljs, visa transaktioner och uppdatera kontoinfo
         accountTable.getSelectionModel().selectedItemProperty().addListener((obs, oldAcc, newAcc) -> {
             if (newAcc != null) {
                 transactionTable.getItems().setAll(newAcc.getTransactions());
@@ -247,7 +306,7 @@ public class BankApp extends Application {
         });
 
         HBox hbox = new HBox(10);
-        VBox customerBox = new VBox(5, btnRefresh, customerListView);
+        VBox customerBox = new VBox(5, btnRefresh, customerListView, btnDeleteCustomer);
         customerBox.setPrefWidth(150);
 
         VBox accountBox = new VBox(5, new Label("Konton"), accountTable);
@@ -278,21 +337,16 @@ public class BankApp extends Application {
         VBox root = new VBox(10);
         root.setPadding(new Insets(10));
 
-        // Sökfält
         TextField txtSearch = new TextField();
         txtSearch.setPromptText("Sök kunder eller konton (namn, ID, konto-nr)");
 
-        // Sökknapp
         Button btnSearch = new Button("Sök");
 
-        // Lista som visar sökresultat: kundid + namn + kontonummer
         ListView<String> lvSearchResults = new ListView<>();
 
-        // Tabeller för konton för vald kund och transaktioner för valt konto
         TableView<Account> tvAccounts = new TableView<>();
         TableView<Transaction> tvTransactions = new TableView<>();
 
-        // Fält och knappar för överföring och ränta
         TextField txtTransferAmount = new TextField();
         txtTransferAmount.setPromptText("Belopp att överföra");
 
@@ -308,7 +362,18 @@ public class BankApp extends Application {
         Button btnAdjustInterest = new Button("Justera ränta");
         Label lblInterestStatus = new Label();
 
-        // Sätt upp kolumner för konton
+        TextField txtDepositCustomerId = new TextField();
+        txtDepositCustomerId.setPromptText("Kund-ID för insättning");
+
+        TextField txtDepositAccount = new TextField();
+        txtDepositAccount.setPromptText("Kontonummer för insättning");
+
+        TextField txtDepositAmount = new TextField();
+        txtDepositAmount.setPromptText("Belopp att sätta in från banken");
+
+        Button btnDepositFromBank = new Button("Sätt in från banken");
+        Label lblDepositStatus = new Label();
+
         TableColumn<Account, String> colAccNum = new TableColumn<>("Kontonummer");
         colAccNum.setCellValueFactory(new PropertyValueFactory<>("accountNumber"));
 
@@ -320,7 +385,6 @@ public class BankApp extends Application {
 
         tvAccounts.getColumns().addAll(colAccNum, colBalance, colInterest);
 
-        // Kolumner för transaktioner
         TableColumn<Transaction, String> colDate = new TableColumn<>("Datum");
         colDate.setCellValueFactory(cellData -> {
             var date = cellData.getValue().getDate();
@@ -337,9 +401,9 @@ public class BankApp extends Application {
         TableColumn<Transaction, String> colDesc = new TableColumn<>("Beskrivning");
         colDesc.setCellValueFactory(new PropertyValueFactory<>("description"));
 
-        tvTransactions.getColumns().addAll(colDate, colType, colAmount, colDesc);
+        tvTransactions.getColumns().setAll(colDate, colType, colAmount, colDesc);
+        tvTransactions.setPlaceholder(new Label("Välj ett konto för att se transaktioner"));
 
-        // Sökfunktion - realtidssökning
         txtSearch.textProperty().addListener((obs, oldVal, newVal) -> {
             lvSearchResults.getItems().clear();
             if (newVal == null || newVal.isBlank()) return;
@@ -358,7 +422,6 @@ public class BankApp extends Application {
             }
         });
 
-        // När man klickar på ett sökresultat, visa konto i konto-tabell
         lvSearchResults.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
                 String[] parts = newVal.split(" - ");
@@ -370,7 +433,6 @@ public class BankApp extends Application {
             }
         });
 
-        // När konto väljs, visa transaktioner
         tvAccounts.getSelectionModel().selectedItemProperty().addListener((obs, oldAcc, newAcc) -> {
             if (newAcc != null) {
                 tvTransactions.getItems().setAll(newAcc.getTransactions());
@@ -381,7 +443,6 @@ public class BankApp extends Application {
             }
         });
 
-        // Överföringsknapp - valideringar och genomför
         btnTransfer.setOnAction(e -> {
             String amountStr = txtTransferAmount.getText().trim();
             String targetAccNum = txtTargetAccount.getText().trim();
@@ -433,7 +494,6 @@ public class BankApp extends Application {
             }
         });
 
-        // Justera ränta knapp och fält
         btnAdjustInterest.setOnAction(e -> {
             Account selected = tvAccounts.getSelectionModel().getSelectedItem();
             if (selected == null) {
@@ -450,38 +510,85 @@ public class BankApp extends Application {
                 selected.setInterestRate(newRate);
                 bank.saveToFile();
                 lblInterestStatus.setText("Ränta uppdaterad.");
-                tvAccounts.refresh(); // uppdatera tabellen för att visa ny ränta
+                tvAccounts.refresh();
             } catch (NumberFormatException ex) {
                 lblInterestStatus.setText("Felaktigt värde för ränta.");
             }
         });
 
-        // Layout
-        HBox searchBox = new HBox(10, txtSearch, btnSearch);
-        btnSearch.setOnAction(e -> {
-            // Om du vill implementera manuell sökning via knapp istället för live-lisning
-            txtSearch.fireEvent(new javafx.event.ActionEvent());
+        btnDepositFromBank.setOnAction(e -> {
+            String custId = txtDepositCustomerId.getText().trim();
+            String accNum = txtDepositAccount.getText().trim();
+            String amountStr = txtDepositAmount.getText().trim();
+
+            if (custId.isEmpty() || accNum.isEmpty() || amountStr.isEmpty()) {
+                lblDepositStatus.setText("Fyll i alla fält.");
+                return;
+            }
+
+            double amount;
+            try {
+                amount = Double.parseDouble(amountStr);
+            } catch (NumberFormatException ex) {
+                lblDepositStatus.setText("Felaktigt belopp.");
+                return;
+            }
+
+            DepositController depositController = new DepositController();
+            boolean success = depositController.depositToCustomerAccount(custId, accNum, amount);
+
+            if (success) {
+                updateBankBalance();
+                lblDepositStatus.setText("Insättning lyckades.");
+            } else {
+                lblDepositStatus.setText("Insättning misslyckades. Kontrollera saldo och data.");
+            }
         });
+
+        HBox searchBox = new HBox(10, txtSearch, btnSearch);
+        btnSearch.setOnAction(e -> txtSearch.fireEvent(new javafx.event.ActionEvent()));
 
         VBox leftPane = new VBox(10, new Label("Sök Kunder/Konton"), txtSearch, lvSearchResults);
         leftPane.setPrefWidth(250);
-
         VBox middlePane = new VBox(10, new Label("Konton"), tvAccounts);
         middlePane.setPrefWidth(300);
-
         VBox rightPane = new VBox(10, new Label("Transaktioner"), tvTransactions);
         rightPane.setPrefWidth(350);
-
         VBox transferPane = new VBox(10, new Label("Överföring"), txtTransferAmount, txtTargetAccount, btnTransfer, lblTransferStatus);
         VBox interestPane = new VBox(10, new Label("Justera Ränta"), txtNewInterestRate, btnAdjustInterest, lblInterestStatus);
 
-        HBox bottomPane = new HBox(20, transferPane, interestPane);
+        VBox depositPane = new VBox(10, new Label("Insättning från bank"),
+                txtDepositCustomerId, txtDepositAccount, txtDepositAmount,
+                btnDepositFromBank, lblDepositStatus);
+        depositPane.setPadding(new Insets(10));
+        depositPane.setStyle("-fx-border-color: gray; -fx-border-radius: 5px; -fx-border-width: 1px;");
+
+        HBox bottomPane = new HBox(20, transferPane, interestPane, depositPane);
 
         root.getChildren().addAll(searchBox, new HBox(15, leftPane, middlePane, rightPane), bottomPane);
 
         tab.setContent(root);
         tab.setClosable(false);
         return tab;
+    }
 
+    private void updateBankBalance() {
+        double saldo = bank.getBankBalance();
+        lblBankBalance.setText(String.format("Bankens saldo: %.2f kr", saldo));
+    }
+
+    private boolean validateCustomerData(String firstName, String lastName, String pnr, String address, String email, String phone, String interestText) {
+        if (firstName.isBlank() || lastName.isBlank() || pnr.isBlank() || address.isBlank() ||
+                email.isBlank() || phone.isBlank() || interestText.isBlank()) {
+            return false;
+        }
+        if (!pnr.matches("\\d{10}")) return false;
+        try {
+            double rate = Double.parseDouble(interestText);
+            if (rate < 0 || rate > 100) return false;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+        return true;
     }
 }

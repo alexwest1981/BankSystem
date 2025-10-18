@@ -14,16 +14,53 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Bank {
+    private static Bank instance = null;
     private List<Customer> customers;
+    private double bankBalance = 1_000_000.0; // exempelstartsaldon för banken
     private static final String DATA_FILE = "bank_data.json";
 
-    public Bank() {
+    private Bank() {
         customers = new ArrayList<>();
     }
 
-    public void registerCustomer(String customerId, String name) {
-        Customer newCustomer = new Customer(customerId, name);
-        customers.add(newCustomer);
+    public static synchronized Bank getInstance() {
+        if (instance == null) {
+            instance = new Bank();
+            instance.loadFromFile();
+        }
+        return instance;
+    }
+
+    public double getBankBalance() {
+        return bankBalance;
+    }
+
+    public void decreaseBankBalance(double amount) {
+        bankBalance -= amount;
+    }
+
+
+    public synchronized boolean depositToCustomer(String customerId, String accountNumber, double amount) {
+        if (amount <= 0 || amount > bankBalance) return false;
+        Customer customer = findCustomerById(customerId);
+        if (customer == null) return false;
+        Account account = customer.getAccounts().stream()
+                .filter(acc -> acc.getAccountNumber().equals(accountNumber))
+                .findFirst()
+                .orElse(null);
+        if (account == null) return false;
+
+        // Gör insättning och minska bankens saldo
+        account.deposit(amount);
+        bankBalance -= amount;
+        saveToFile();
+        return true;
+    }
+
+    public void registerCustomer(String customerId, String name, String personalNumber, String address, String email, String phone) {
+        Customer customer = new Customer(customerId, name, personalNumber, address, email, phone);
+        customers.add(customer);
+        saveToFile();
     }
 
     public boolean accountNumberExists(String accountNumber) {
@@ -85,8 +122,17 @@ public class Bank {
         }
     }
 
-    public List<Customer> getCustomers() {
-        return new ArrayList<>(customers); // Returnera en kopia för säkerhet
+    public boolean removeCustomerById(String customerId) {
+        Customer c = findCustomerById(customerId);
+        if (c != null) {
+            customers.remove(c);
+            saveToFile();
+            return true;
+        }
+        return false;
     }
 
+    public List<Customer> getCustomers() {
+        return new ArrayList<>(customers);
+    }
 }

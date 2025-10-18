@@ -9,10 +9,10 @@ public class Transaction {
     private Type type;
     private String description;
 
-    public Transaction(double amount, Type type, String description) {
+    public Transaction(Type type, double amount, String description) {
         this.date = new Date();
-        this.amount = amount;
         this.type = type;
+        this.amount = amount;
         this.description = description;
     }
 
