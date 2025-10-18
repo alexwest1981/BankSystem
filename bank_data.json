@@ -1,23 +1,5 @@
 [
   {
-    "customerId": "12",
-    "name": "anna",
-    "accounts": [
-      {
-        "accountNumber": "872359872138957289375",
-        "balance": 0.0,
-        "interestRate": 0.5,
-        "transactions": []
-      },
-      {
-        "accountNumber": "123123123",
-        "balance": 0.0,
-        "interestRate": 0.01,
-        "transactions": []
-      }
-    ]
-  },
-  {
     "customerId": "123",
     "name": "Bertil",
     "accounts": [
@@ -37,6 +19,23 @@
         "accountNumber": "112043026497",
         "balance": 0.0,
         "interestRate": 0.05,
+        "transactions": []
+      }
+    ]
+  },
+  {
+    "customerId": "1231231231",
+    "name": "Bengan Bongan",
+    "personalNumber": "1231231231",
+    "address": "billeberga",
+    "email": "lksajkdgkjah@sdjfg.se",
+    "phone": "656544654654654",
+    "accounts": [
+      {
+        "accountNumber": "903593832347",
+        "balance": 0.0,
+        "interestRate": 0.015,
+        "clearingNumber": "2222-2",
         "transactions": []
       }
     ]

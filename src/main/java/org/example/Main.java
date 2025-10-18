@@ -4,7 +4,7 @@ import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-        Bank bank = new Bank();
+        Bank bank = Bank.getInstance();
         bank.loadFromFile();
 
         Scanner scanner =  new Scanner(System.in);

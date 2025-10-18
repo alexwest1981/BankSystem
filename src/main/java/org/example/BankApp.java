@@ -12,10 +12,16 @@ import java.util.Random;
 
 public class BankApp extends Application {
 
-    private Bank bank = new Bank();
+    private Bank bank = Bank.getInstance();
     private ListView<String> customerListView = new ListView<>();
     private TableView<Account> accountTable = new TableView<>();
     private TableView<Transaction> transactionTable = new TableView<>();
+    private Label lblAccountNumber = new Label();
+    private Label lblClearingNumber = new Label();
+
+    // Instansvariabler för förhandsvisning
+    private String previewedAccountNumber = "";
+    private String previewedClearingNumber = "";
 
     public static void main(String[] args) {
         launch(args);
@@ -80,12 +86,12 @@ public class BankApp extends Application {
         cbOffice.getItems().addAll("Stockholm", "Göteborg", "Malmö", "Uppsala", "Västerås",
                 "Örebro", "Linköping", "Helsingborg", "Jönköping", "Norrköping");
         cbOffice.getSelectionModel().selectFirst();
+        cbOffice.valueProperty().addListener((obs, oldVal, newVal) -> previewAccountData(txtPnr.getText(), newVal));
+        txtPnr.textProperty().addListener((obs, oldVal, newVal) -> previewAccountData(newVal, cbOffice.getValue()));
 
         Label labelGeneratedAccountNumber = new Label("Genererat kontonummer:");
-        Label lblAccountNumber = new Label();
 
         Label labelGeneratedClearingNumber = new Label("Genererat clearingnummer:");
-        Label lblClearingNumber = new Label();
 
         Button btnRegisterAndCreate = new Button("Registrera kund & skapa konto");
         Label lblMessage = new Label();
@@ -123,10 +129,14 @@ public class BankApp extends Application {
             }
 
             // Generera kontonummer och clearingnummer innan kundskapande
-            String accountNumber = generateAccountNumber();
-            String clearingNumber = generateClearingNumber(cbOffice.getValue());
+            String accountNumber = previewedAccountNumber;
+            String clearingNumber = previewedClearingNumber;
 
-            // Registrera kund med alla fält
+            if (accountNumber.isEmpty() || clearingNumber.isEmpty()) {
+                lblMessage.setText("Fyll i giltigt personnummer och kontorsort för förhandsvisning/kontoskaping.");
+                return;
+            }
+
             bank.registerCustomer(
                     customerId,
                     txtFirstName.getText() + " " + txtLastName.getText(),
@@ -135,17 +145,15 @@ public class BankApp extends Application {
                     txtEmail.getText(),
                     txtPhone.getText()
             );
-
             Customer customer = bank.findCustomerById(customerId);
 
             if (customer != null) {
                 customer.openAccount(accountNumber, interestRate, clearingNumber);
-
                 lblAccountNumber.setText(formatAccountNumber(accountNumber));
                 lblClearingNumber.setText(clearingNumber);
                 lblMessage.setText("Kund och konto skapade.");
 
-                // Rensa fält
+                // Rensa endast textfälten för ny registrering
                 txtFirstName.clear();
                 txtLastName.clear();
                 txtPnr.clear();
@@ -154,7 +162,10 @@ public class BankApp extends Application {
                 txtPhone.clear();
                 txtInterestRate.clear();
 
+                // OBS: Rensa INTE lblAccountNumber eller lblClearingNumber här!
                 bank.saveToFile();
+                // Generera ny förhandsvisning efter skapande om användaren vill registrera fler
+                previewAccountData("", cbOffice.getValue());
             } else {
                 lblMessage.setText("Fel vid skapande av kund.");
             }
@@ -215,6 +226,22 @@ public class BankApp extends Application {
         }
     }
 
+    private void previewAccountData(String pnr, String office) {
+        if (pnr != null && pnr.matches("\\d{10}") && office != null) {
+            previewedAccountNumber = generateAccountNumber();
+            previewedClearingNumber = generateClearingNumber(office);
+
+            lblAccountNumber.setText(formatAccountNumber(previewedAccountNumber));
+            lblClearingNumber.setText(previewedClearingNumber);
+        } else {
+            previewedAccountNumber = "";
+            previewedClearingNumber = "";
+            lblAccountNumber.setText("");
+            lblClearingNumber.setText("");
+        }
+    }
+
+
     private VBox createShowCustomersPane() {
         VBox vbox = new VBox(10);
         vbox.setPadding(new Insets(15));
@@ -265,6 +292,19 @@ public class BankApp extends Application {
         accountInfoBox.setPadding(new Insets(10));
         accountInfoBox.setPrefWidth(200);
 
+        Button btnDeleteCustomer = new Button("Ta bort vald kund");
+        btnDeleteCustomer.setOnAction(e -> {
+            String selected = customerListView.getSelectionModel().getSelectedItem();
+            if (selected != null) {
+                String customerId = selected.split(" - ")[0];
+                if (bank.removeCustomerById(customerId)) {
+                    customerListView.getItems().remove(selected);
+                    accountTable.getItems().clear();
+                    transactionTable.getItems().clear();
+                }
+            }
+        });
+
         customerListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
                 String custId = newVal.split(" - ")[0];
@@ -288,7 +328,7 @@ public class BankApp extends Application {
         });
 
         HBox hbox = new HBox(10);
-        VBox customerBox = new VBox(5, btnRefresh, customerListView);
+        VBox customerBox = new VBox(5, btnRefresh, customerListView, btnDeleteCustomer);
         customerBox.setPrefWidth(150);
 
         VBox accountBox = new VBox(5, new Label("Konton"), accountTable);
