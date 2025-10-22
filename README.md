@@ -107,7 +107,25 @@ Följ dessa steg för att konfigurera och förbereda projektet lokalt:
     * **JavaFX SDK 24**
     * **MariaDB JDBC-driver** (Hämtas automatiskt av Maven)
 
-### 3. Körning
+### 3. Konfigurera JavaFX i IntelliJ (Om Nödvändigt)
+
+Eftersom JavaFX inte längre ingår i standard-JDK:n kan det krävas manuell konfiguration för att köra projektet via din IDE (även om Maven-kommandot hanterar det automatiskt).
+
+1.  **Hämta SDK:** Se till att du har hämtat **JavaFX SDK 24** (för din plattform).
+2.  **Modulinställningar:**
+    * Gå till **File** -> **Project Structure** -> **Libraries**.
+    * Lägg till sökvägen till din hämtade JavaFX SDK som ett **Globalt Bibliotek** (eller Modulbibliotek).
+3.  **Körkonfiguration (Run Configuration):**
+    * Gå till **Run** -> **Edit Configurations**.
+    * I din **Application Run Configuration**, lägg till VM-argument för att peka på modulerna i JavaFX SDK:
+      ```
+      --module-path /path/to/javafx-sdk-24/lib --add-modules javafx.controls,javafx.fxml
+      ```
+      *(Ersätt `/path/to/javafx-sdk-24/lib` med den faktiska sökvägen till mappen `lib` i din JavaFX SDK-nedladdning).*
+
+Om du använder **`mvn clean javafx:run`** (som rekommenderas i steg 3) kommer Maven-pluginet att hantera dessa beroenden och argument åt dig.
+
+### 4. Körning
 
 När projektet är konfigurerat kan du starta applikationen med Maven:
 
