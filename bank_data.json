@@ -57,9 +57,33 @@
     "accounts": [
       {
         "accountNumber": "338997247054",
-        "balance": 0.0,
+        "balance": 5000.0,
         "interestRate": 0.01,
         "clearingNumber": "1111-1",
+        "transactions": [
+          {
+            "date": "Oct 18, 2025, 7:12:13 PM",
+            "amount": 5000.0,
+            "type": "DEPOSIT",
+            "description": "Insättning"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "customerId": "8104153211",
+    "name": "Bertil Jhonsson",
+    "personalNumber": "8104153211",
+    "address": "abc",
+    "email": "abc@abc.se",
+    "phone": "54654524634634152452",
+    "accounts": [
+      {
+        "accountNumber": "353471467981",
+        "balance": 0.0,
+        "interestRate": 0.05,
+        "clearingNumber": "2222-2",
         "transactions": []
       }
     ]

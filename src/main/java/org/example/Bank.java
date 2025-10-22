@@ -1,45 +1,97 @@
 package org.example;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
-
-import java.io.IOException;
-import java.lang.reflect.Type;
-import java.io.Reader;
-import java.io.Writer;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 
 public class Bank {
-    private static Bank instance = null;
-    private List<Customer> customers;
-    private double bankBalance = 1_000_000.0; // exempelstartsaldon för banken
-    private static final String DATA_FILE = "bank_data.json";
+    // Volatile för thread safety vid double-checked locking
+    private static volatile Bank instance = null;
 
+    private CustomerService customerService;
+    private AccountService accountService;
+    private BankBalanceService bankBalanceService;
+
+    private List<Customer> customers;
+    private double bankBalance;
+
+    // Privat konstruktor för att förhindra instansiering utifrån
     private Bank() {
-        customers = new ArrayList<>();
+        customerService = new CustomerService();
+        accountService = new AccountService();
+        bankBalanceService = new BankBalanceService();
+
+        customers = customerService.getAllCustomers();
+
+        bankBalance = bankBalanceService.getBankBalance();
+        if (bankBalance == 0) {
+            bankBalance = 1_000_000.0;
+            bankBalanceService.initializeBankBalance(bankBalance);
+        }
     }
 
-    public static synchronized Bank getInstance() {
+    // Thread-safe getter för singletoninstans
+    public static Bank getInstance() {
         if (instance == null) {
-            instance = new Bank();
-            instance.loadFromFile();
+            synchronized (Bank.class) {
+                if (instance == null) {
+                    instance = new Bank();
+                }
+            }
         }
         return instance;
     }
 
+    // Accessors för servicelagren
+    public CustomerService getCustomerService() {
+        return customerService;
+    }
+
+    public AccountService getAccountService() {
+        return accountService;
+    }
+
+    public BankBalanceService getBankBalanceService() {
+        return bankBalanceService;
+    }
+
+    // Metoder för kundhantering
+    public List<Customer> getCustomers() {
+        return customers;
+    }
+
+    public void refreshCustomers() {
+        customers = customerService.getAllCustomers();
+    }
+
+    public boolean registerCustomer(String id, String name, String personalNumber, String address, String email, String phone) {
+        boolean success = customerService.registerCustomer(id, name, personalNumber, address, email, phone);
+        if (success) refreshCustomers();
+        return success;
+    }
+
+    public Customer findCustomerById(String id) {
+        return customers.stream()
+                .filter(c -> c.getCustomerId().equals(id))
+                .findFirst()
+                .orElse(null);
+    }
+
+    public boolean accountNumberExists(String accountNumber) {
+        return customers.stream()
+                .flatMap(c -> accountService.getAccountsByCustomerId(c.getCustomerId()).stream())
+                .anyMatch(acc -> acc.getAccountNumber().equals(accountNumber));
+    }
+
+    // Bankens saldo
     public double getBankBalance() {
         return bankBalance;
     }
 
     public void decreaseBankBalance(double amount) {
         bankBalance -= amount;
+        bankBalanceService.updateBankBalance(bankBalance);
     }
 
-
+    // Exempelmethod för insättning
     public synchronized boolean depositToCustomer(String customerId, String accountNumber, double amount) {
         if (amount <= 0 || amount > bankBalance) return false;
         Customer customer = findCustomerById(customerId);
@@ -50,89 +102,9 @@ public class Bank {
                 .orElse(null);
         if (account == null) return false;
 
-        // Gör insättning och minska bankens saldo
         account.deposit(amount);
-        bankBalance -= amount;
-        saveToFile();
+        accountService.updateAccountBalance(account.getAccountNumber(), account.getBalance());
+        decreaseBankBalance(amount);
         return true;
-    }
-
-    public void registerCustomer(String customerId, String name, String personalNumber, String address, String email, String phone) {
-        Customer customer = new Customer(customerId, name, personalNumber, address, email, phone);
-        customers.add(customer);
-        saveToFile();
-    }
-
-    public boolean accountNumberExists(String accountNumber) {
-        for (Customer c : customers) {
-            for (Account a : c.getAccounts()) {
-                if(a.getAccountNumber().equals(accountNumber)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    public Customer findCustomerById(String id) {
-        for (Customer c : customers) {
-            if (c.getCustomerId().equals(id)) {
-                return c;
-            }
-        }
-        return null;
-    }
-
-    public void printAllCustomers() {
-        System.out.println("Kunder i banken:");
-        if (customers.isEmpty()) {
-            System.out.println("(Inga kunder registrerade)");
-        }
-        for (Customer c : customers) {
-            System.out.println("ID: " + c.getCustomerId() + ", Namn: " + c.getName());
-        }
-    }
-
-    public void loadFromFile() {
-        try {
-            if (Files.exists(Paths.get(DATA_FILE))) {
-                Reader reader = Files.newBufferedReader(Paths.get(DATA_FILE));
-                Gson gson = new Gson();
-                Type customerListType = new TypeToken<ArrayList<Customer>>(){}.getType();
-                List<Customer> loadedCustomers = gson.fromJson(reader, customerListType);
-                if (loadedCustomers != null) {
-                    customers = loadedCustomers;
-                }
-                reader.close();
-            }
-        } catch (IOException e) {
-            System.out.println("Error loading file: " + e.getMessage());
-        }
-    }
-
-    public void saveToFile() {
-        try {
-            Writer writer = Files.newBufferedWriter(Paths.get(DATA_FILE));
-            Gson gson = new GsonBuilder().setPrettyPrinting().create();
-            gson.toJson(customers, writer);
-            writer.close();
-            System.out.println("Data sparad i fil: " + Paths.get(DATA_FILE).toAbsolutePath());
-        } catch (IOException e) {
-            System.out.println("Error saving file: " + e.getMessage());
-        }
-    }
-
-    public boolean removeCustomerById(String customerId) {
-        Customer c = findCustomerById(customerId);
-        if (c != null) {
-            customers.remove(c);
-            saveToFile();
-            return true;
-        }
-        return false;
-    }
-
-    public List<Customer> getCustomers() {
-        return new ArrayList<>(customers);
     }
 }

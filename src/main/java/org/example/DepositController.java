@@ -1,9 +1,5 @@
 package org.example;
 
-import org.example.Bank;
-import org.example.Customer;
-import org.example.Account;
-
 public class DepositController {
     private Bank bank = Bank.getInstance();
 
@@ -23,12 +19,11 @@ public class DepositController {
                 .orElse(null);
         if (account == null) return false;
 
-        // Dra av från bankens saldo
-        bank.decreaseBankBalance(amount);
-        //Sätt in på kundens konto
-        account.deposit(amount);
-        // Spara ändringarna
-        bank.saveToFile();
+        bank.decreaseBankBalance(amount); // Dra av från bankens saldo
+        account.deposit(amount);          // Sätt in på kundens konto
+
+        // Skriv till databasen
+        bank.getAccountService().updateAccountBalance(account.getAccountNumber(), account.getBalance());
 
         return true;
     }
