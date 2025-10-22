@@ -1,11 +1,11 @@
 package org.example;
 
+import java.util.List;
 import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
         Bank bank = Bank.getInstance();
-        bank.loadFromFile();
 
         Scanner scanner =  new Scanner(System.in);
         while (true) {
@@ -35,14 +35,19 @@ public class Main {
                     if (bank.findCustomerById(custId) != null) {
                         System.out.println("Kund-id finns redan!");
                     } else  {
-                        // Använder nu metoden som tar alla fält
                         bank.registerCustomer(custId, custName, personalNumber, address, email, phone);
-                        bank.saveToFile();
                         System.out.println("Kund registrerad.");
                     }
                     break;
                 case "2":
-                    bank.printAllCustomers();
+                    List<Customer> customers = bank.getCustomers();
+                    if (customers.isEmpty()) {
+                        System.out.println("(Inga kunder registrerade)");
+                    } else {
+                        for (Customer c : customers) {
+                            System.out.println("ID: " + c.getCustomerId() + ", Namn: " + c.getName());
+                        }
+                    }
                     break;
                 case "3":
                     System.out.print("Ange kund-id för konto: ");
@@ -53,12 +58,16 @@ public class Main {
                         break;
                     }
 
-                    System.out.print("Ange nytt kontonummer: ");
+                    System.out.print("Ange nytt kontonummer (tomt för auto): ");
                     String accNum = scanner.nextLine().trim();
-                    if (bank.accountNumberExists(accNum)) {
+                    if (accNum.isEmpty()) {
+                        accNum = bank.getAccountService().generateAccountNumber();
+                        System.out.println("Genererat kontonummer: " + accNum);
+                    } else if (bank.accountNumberExists(accNum)) {
                         System.out.println("Kontonummer finns redan, välj annat.");
                         break;
                     }
+
                     System.out.print("Ange räntesats (t.ex. 0.01 för 1%): ");
                     double rate;
                     try {
@@ -68,12 +77,15 @@ public class Main {
                         break;
                     }
 
-                    System.out.print("Ange clearingnummer: ");
-                    String clearingNumber = scanner.nextLine().trim();
+                    System.out.print("Ange stad (för clearingnummer): ");
+                    String city = scanner.nextLine().trim();
 
-                    customer.openAccount(accNum, rate, clearingNumber);
-                    bank.saveToFile();
-                    System.out.println("Konto skapat.");
+                    boolean accountCreated = bank.getAccountService().createAccount(accNum, customerId, rate, 0.0, city);
+                    if (accountCreated) {
+                        System.out.println("Konto skapat.");
+                    } else {
+                        System.out.println("Misslyckades skapa konto.");
+                    }
                     break;
                 case "4":
                     System.out.println("Avslutar...");
