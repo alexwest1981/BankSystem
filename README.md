@@ -1,8 +1,8 @@
-# BankSystem – JavaFX Banking Application 🏦
+# BankSystem – JavaFX Banking Application
 
 BankSystem är en enkel bankapplikation byggd med **Java** och **JavaFX** för grafiskt användargränssnitt, tillsammans med **Gson** för JSON-hantering. Projektet syftar till att erbjuda en robust och användarvänlig plattform för att hantera kunder, konton och banktransaktioner, med möjlighet att spara och läsa data från disk i JSON-format.
 
-## ✨ Genomförda Förbättringar och Refaktoriseringar
+## Genomförda Förbättringar och Refaktoriseringar
 
 Vi har arbetat aktivt med att förbättra kodbasens struktur och funktionalitet:
 
@@ -17,7 +17,7 @@ Vi har arbetat aktivt med att förbättra kodbasens struktur och funktionalitet:
 * Infört hantering av bankens totala saldo direkt från databasen.
 * Planerat migrering till **MVC-arkitektur** med användning av FXML och Controller-klasser.
 
-## 🛠️ Teknologier och Verktyg
+## Teknologier och Verktyg
 
 | Teknologi | Version / Beskrivning |
 | :--- | :--- |
@@ -28,7 +28,7 @@ Vi har arbetat aktivt med att förbättra kodbasens struktur och funktionalitet:
 | **Maven** | Projekt- och beroendehantering. |
 | **IntelliJ IDEA** | 2025.2 – Rekommenderat utvecklingsverktyg. |
 
-## 🌟 Funktioner
+## Funktioner
 
 * Registrering av kunder med unika ID:n och fullständig information.
 * Visning och sökning av kunder och deras konton.
@@ -41,7 +41,7 @@ Vi har arbetat aktivt med att förbättra kodbasens struktur och funktionalitet:
 * Realtidsuppdatering i grafiskt gränssnitt.
 * Flikbaserad navigation för enkel användning.
 
-## 🚀 Installation och Användning
+## Installation och Användning
 
 För att komma igång, följ dessa steg:
 
@@ -140,7 +140,7 @@ När projektet är konfigurerat kan du starta applikationen med Maven:
 
 
 
-## 🗺️ Kommande Funktioner (Roadmap)
+## Kommande Funktioner (Roadmap)
 
 Projektet har en ambitiös framtidsplan för att utöka funktionalitet, struktur och säkerhet:
 
@@ -152,7 +152,7 @@ Projektet har en ambitiös framtidsplan för att utöka funktionalitet, struktur
 * **Prestanda:** Optimering för storskaliga databasinteraktioner.
 * **Flera Användare:** Multiuser- och sessionhantering med samtidighetskontroll.
 
-## ⚠️ Kända Buggar och Begränsningar
+## Kända Buggar och Begränsningar
 
 Var medveten om följande kända begränsningar och områden som kräver förbättring:
 
@@ -161,13 +161,13 @@ Var medveten om följande kända begränsningar och områden som kräver förbä
 * **Datakonsistens:** Ingen hantering för samtidig åtkomst till den äldre JSON-filen (då databas nu är primär lagringslösning).
 * **Prestanda:** Applikationen är ej optimerad för mycket stora datamängder eller hög belastning.
 
-## 📜 Licens
+## Licens
 
 Projektet är licensierat under **MIT License** © 2025 Alex Weström / Fenrir Studios.
 
 > MIT-licensen är en fri och öppen källkods-licens som tillåter användning, kopiering, modifiering och distribution, under villkor om att licens och upphovsrättsnotis följer med. Programvaran erbjuds "i befintligt skick" utan garanti.
 
-## 🤝 Kontakt & Bidrag
+## Kontakt & Bidrag
 
 Alla bidrag, buggrapporter och förslag är varmt välkomna! Vi uppskattar alla former av engagemang.
 
