@@ -95,7 +95,7 @@ Följ dessa steg för att konfigurera och förbereda projektet lokalt:
 1.  **Klona Repository:**
     Använd Git för att klona projektet till din lokala maskin:
     ```bash
-    git clone [https://github.com/alexwest1981/BankSystem.git](https://github.com/alexwest1981/BankSystem.git)
+    git clone https://github.com/alexwest1981/BankSystem.git
     ```
 
 2.  **Importera i IDE:**
